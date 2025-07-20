@@ -122,37 +122,6 @@ const columns = [
     }
   }
 
-  // ROLE CONDITIONS
-
-  switch (role) {
-    case "admin":
-      break;
-    case "teacher":
-      query.lesson.teacherId = currentUserId!;
-      break;
-    case "student":
-      query.lesson.class = {
-        students: {
-          some: {
-            id: currentUserId!,
-          },
-        },
-      };
-      break;
-    case "parent":
-      query.lesson.class = {
-        students: {
-          some: {
-            parentId: currentUserId!,
-          },
-        },
-      };
-      break;
-
-    default:
-      break;
-  }
-
    const [data, count] = await prisma.$transaction([
     prisma.exam.findMany({
       where: query,
