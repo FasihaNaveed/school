@@ -1,13 +1,13 @@
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role, resultsData } from "@/lib/data";
 import Image from "next/image";
 import Link from "next/link";
 import FormModal from "@/components/FormModal"; // ✅ Make sure this is imported
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Prisma } from "@prisma/client";
+import { currentUserId, role } from "@/lib/utils";
 
 type ResultList = {
   id: number;
@@ -75,22 +75,18 @@ const columns = [
     <td className="hidden md:table-cell">
       {new Intl.DateTimeFormat("en-US").format(item.startTime)}
     </td>
-    <td>
-        <div className="flex items-center gap-2">
-          <Link href={`/list/results/${item.id}`}>
-            <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-              <Image src="/edit.png" alt="Edit" width={16} height={16} />
-            </button>
-          </Link>
-          {role === "admin" && (
-            <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
-              <Image src="/delete.png" alt="Delete" width={16} height={16} />
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
+     <td>
+      <div className="flex items-center gap-2">
+        {(role === "admin" || role === "teacher") && (
+          <>
+            <FormModal table="result" type="update" data={item} />
+            <FormModal table="result" type="delete" id={item.id} />
+          </>
+        )}
+      </div>
+    </td>
+  </tr>
+);
 
   const ResultListPage = async ({
         searchParams,
@@ -124,6 +120,31 @@ const columns = [
         }
       }
     }
+  }
+
+  // ROLE CONDITIONS
+
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      query.OR = [
+        { exam: { lesson: { teacherId: currentUserId! } } },
+        { assignment: { lesson: { teacherId: currentUserId! } } },
+      ];
+      break;
+
+    case "student":
+      query.studentId = currentUserId!;
+      break;
+
+    case "parent":
+      query.student = {
+        parentId: currentUserId!,
+      };
+      break;
+    default:
+      break;
   }
 
   const [dataRes, count] = await prisma.$transaction([
@@ -192,8 +213,8 @@ const columns = [
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="Sort" width={14} height={14} />
             </button>
-            {role === "admin" && (
-              <FormModal table="result" type="create" /> // ✅ modal enabled
+             {(role === "admin" || role === "teacher") && (
+              <FormModal table="result" type="create" />
             )}
           </div>
         </div>

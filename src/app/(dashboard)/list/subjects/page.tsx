@@ -1,30 +1,38 @@
-import FormModal from "@/components/FormModal";
+import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role, subjectsData } from "@/lib/data";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
+import { auth } from "@clerk/nextjs/server";
 
 type SubjectList = Subject & { teachers: Teacher[] };
 
-const columns = [
-  {
-    header: "Subject Name",
-    accessor: "name",
-  },
-  {
-    header: "Teachers",
-    accessor: "teachers",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
-];
+const SubjectListPage = async ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | undefined };
+}) => {
+  const { sessionClaims } = await auth(); // ✅ await added here
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  const columns = [
+    {
+      header: "Subject Name",
+      accessor: "name",
+    },
+    {
+      header: "Teachers",
+      accessor: "teachers",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Actions",
+      accessor: "action",
+    },
+  ];
 
   const renderRow = (item: SubjectList) => (
     <tr
@@ -35,12 +43,12 @@ const columns = [
       <td className="hidden md:table-cell">
         {item.teachers.map((teacher) => teacher.name).join(",")}
       </td>
-        <td>
+      <td>
         <div className="flex items-center gap-2">
           {role === "admin" && (
             <>
-              <FormModal table="subject" type="update" data={item} />
-              <FormModal table="subject" type="delete" id={item.id} />
+              <FormContainer table="subject" type="update" data={item} />
+              <FormContainer table="subject" type="delete" id={item.id} />
             </>
           )}
         </div>
@@ -48,20 +56,12 @@ const columns = [
     </tr>
   );
 
-  const SubjectListPage = async ({
-      searchParams,
-    }: {
-      searchParams: { [key: string]: string | undefined };
-    }) => {
-      const { page, ...queryParams } = searchParams;
-    
-      const p = page ? parseInt(page) : 1;
-    
-      // URL PARAMS CONDITION
-    
-      const query: Prisma.SubjectWhereInput = {};
-    
-      if (queryParams) {
+  const { page, ...queryParams } = searchParams;
+  const p = page ? parseInt(page) : 1;
+
+  // URL PARAMS CONDITION
+  const query: Prisma.SubjectWhereInput = {};
+  if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
@@ -75,7 +75,7 @@ const columns = [
     }
   }
 
-     const [data, count] = await prisma.$transaction([
+  const [data, count] = await prisma.$transaction([
     prisma.subject.findMany({
       where: query,
       include: {
@@ -96,13 +96,14 @@ const columns = [
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="Filter" width={14} height={14} />
+              <Image src="/filter.png" alt="" width={14} height={14} />
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="Sort" width={14} height={14} />
+              <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {/* ✅ FIXED THIS LINE BELOW */}
-            {role === "admin" && <FormModal table="subject" type="create" />}
+            {role === "admin" && (
+              <FormContainer table="subject" type="create" />
+            )}
           </div>
         </div>
       </div>

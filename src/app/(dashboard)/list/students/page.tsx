@@ -1,46 +1,61 @@
-import FormModal from "@/components/FormModal";
+import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role, studentsData } from "@/lib/data"; // ✅ Corrected to studentsData
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Prisma } from "@prisma/client";
+import { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
+import { auth } from "@clerk/nextjs/server";
+
 type StudentList = Student & { class: Class };
 
-const columns = [
-  {
-    header: "Info",
-    accessor: "info",
-  },
-  {
-    header: "Student ID",
-    accessor: "studentId",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Grade",
-    accessor: "grade",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Phone",
-    accessor: "phone",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Address",
-    accessor: "address",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
-];
+const StudentListPage = async ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | undefined };
+}) => {
+  const { sessionClaims } = await auth(); // ✅ FIXED: added await
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  // ...rest of your code remains the same
+
+  const columns = [
+    {
+      header: "Info",
+      accessor: "info",
+    },
+    {
+      header: "Student ID",
+      accessor: "studentId",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Grade",
+      accessor: "grade",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Phone",
+      accessor: "phone",
+      className: "hidden lg:table-cell",
+    },
+    {
+      header: "Address",
+      accessor: "address",
+      className: "hidden lg:table-cell",
+    },
+    ...(role === "admin"
+      ? [
+          {
+            header: "Actions",
+            accessor: "action",
+          },
+        ]
+      : []),
+  ];
 
   const renderRow = (item: StudentList) => (
     <tr
@@ -53,11 +68,11 @@ const columns = [
           alt=""
           width={40}
           height={40}
-          className="xl:block w-10 h-10 rounded-full object-cover"
+          className="md:hidden xl:block w-10 h-10 rounded-full object-cover"
         />
         <div className="flex flex-col">
           <h3 className="font-semibold">{item.name}</h3>
-           <p className="text-xs text-gray-500">{item.class.name}</p>
+          <p className="text-xs text-gray-500">{item.class.name}</p>
         </div>
       </td>
       <td className="hidden md:table-cell">{item.username}</td>
@@ -72,50 +87,48 @@ const columns = [
             </button>
           </Link>
           {role === "admin" && (
-            <FormModal table="student" type="delete" id={item.id} />
+            // <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
+            //   <Image src="/delete.png" alt="" width={16} height={16} />
+            // </button>
+            <FormContainer table="student" type="delete" id={item.id} />
           )}
         </div>
       </td>
     </tr>
   );
 
-  const StudentListPage = async ({
-    searchParams,
-  }: {
-    searchParams: { [key: string]: string | undefined };
-  }) => {
-    const { page, ...queryParams } = searchParams;
-  
-    const p = page ? parseInt(page) : 1;
-  
-    // URL PARAMS CONDITION
-  
-    const query: Prisma.StudentWhereInput = {};
-  
-    if (queryParams) {
-      for (const [key, value] of Object.entries(queryParams)) {
-        if (value !== undefined) {
-          switch (key) {
-            case "teacherId":
-              query.class = {
+  const { page, ...queryParams } = searchParams;
+
+  const p = page ? parseInt(page) : 1;
+
+  // URL PARAMS CONDITION
+
+  const query: Prisma.StudentWhereInput = {};
+
+  if (queryParams) {
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value !== undefined) {
+        switch (key) {
+          case "teacherId":
+            query.class = {
               lessons: {
                 some: {
                   teacherId: value,
                 },
               },
             };
-              break;
-            case "search":
-              query.name = { contains: value, mode: "insensitive" };
-              break;
-            default:
-              break;
-          }
+            break;
+          case "search":
+            query.name = { contains: value, mode: "insensitive" };
+            break;
+          default:
+            break;
         }
       }
     }
-  
-   const [data, count] = await prisma.$transaction([
+  }
+
+  const [data, count] = await prisma.$transaction([
     prisma.student.findMany({
       where: query,
       include: {
@@ -142,16 +155,17 @@ const columns = [
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {role === "admin" && (
-              <FormModal table="student" type="create" />
+              // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+              //   <Image src="/plus.png" alt="" width={14} height={14} />
+              // </button>
+              <FormContainer table="student" type="create" />
             )}
           </div>
         </div>
       </div>
-
       {/* LIST */}
       <Table columns={columns} renderRow={renderRow} data={data} />
-
-      {/* Pagination */}
+      {/* PAGINATION */}
       <Pagination page={p} count={count} />
     </div>
   );
