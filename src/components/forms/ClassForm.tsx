@@ -1,7 +1,7 @@
 "use client";
-
-import { useForm } from "react-hook-form";
+// @ts-ignore
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
