@@ -1,53 +1,64 @@
-//import { auth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
-//let role: string | undefined;
-//let currentUserId: string | undefined;
+/**
+ * Get current user ID
+ */
+export async function currentUserId(): Promise<string | undefined> {
+  const { userId } = await auth();
+  return userId ?? undefined; // Convert null to undefined to match return type
+}
 
-//auth().then((res) => {
- // const sessionClaims = res.sessionClaims as { metadata?: { role?: string }; sub?: string };
- // role = sessionClaims?.metadata?.role;
- // currentUserId = sessionClaims?.sub; 
-//});
+/**
+ * Get current user's role
+ */
+export async function role(): Promise<string | undefined> {
+  const { sessionClaims } = await auth();
+  const claims = sessionClaims as { metadata?: { role?: string | null } };
+  return claims?.metadata?.role ?? undefined; // Convert null to undefined
+}
 
-//export { role, currentUserId };
-
-const currentWorkWeek=()=>{
+/**
+ * Returns the Date object for the start of the current work week (Monday)
+ */
+const currentWorkWeek = (): Date => {
   const today = new Date();
-  const dayOfWeek=today.getDay();
-
+  const dayOfWeek = today.getDay();
   const startOfWeek = new Date(today);
 
-  if(dayOfWeek===0){
-    startOfWeek.setDate(today.getDate()+1);
+  if (dayOfWeek === 0) {
+    // Sunday → shift to Monday
+    startOfWeek.setDate(today.getDate() + 1);
+  } else if (dayOfWeek === 6) {
+    // Saturday → shift to next Monday
+    startOfWeek.setDate(today.getDate() + 2);
+  } else {
+    // Any weekday → move to Monday
+    startOfWeek.setDate(today.getDate() - (dayOfWeek - 1));
   }
 
-   if(dayOfWeek===6){
-    startOfWeek.setDate(today.getDate()+2);
-  }else{
-    startOfWeek.setDate(today.getDate()-(dayOfWeek-1));
-  }
-  startOfWeek.setHours(0,0,0,0);
-
- 
+  startOfWeek.setHours(0, 0, 0, 0);
   return startOfWeek;
 };
 
-export const adjustScheduleToCurrentWeek=(lessons:{title:string;start:Date;end:Date}[]):{title:string;start:Date;end:Date}[]=>{
-  const startOfWeek=currentWorkWeek()
+/**
+ * Adjust a list of lessons to match the current work week dates
+ */
+export const adjustScheduleToCurrentWeek = (
+  lessons: { title: string; start: Date; end: Date }[]
+): { title: string; start: Date; end: Date }[] => {
+  const startOfWeek = currentWorkWeek();
 
-  return lessons.map(lesson=>{
-    const lessonDayOfWeek=lesson.start.getDay();
-
-    const daysFromMonday=lessonDayOfWeek===0?6:lessonDayOfWeek-1;
+  return lessons.map((lesson) => {
+    const lessonDayOfWeek = lesson.start.getDay();
+    const daysFromMonday = lessonDayOfWeek === 0 ? 6 : lessonDayOfWeek - 1;
 
     const adjustedStartDate = new Date(startOfWeek);
-
-    adjustedStartDate.setDate(startOfWeek.getDate()+daysFromMonday);
-        adjustedStartDate.setHours(
+    adjustedStartDate.setDate(startOfWeek.getDate() + daysFromMonday);
+    adjustedStartDate.setHours(
       lesson.start.getHours(),
       lesson.start.getMinutes(),
       lesson.start.getSeconds()
-        );
+    );
 
     const adjustedEndDate = new Date(adjustedStartDate);
     adjustedEndDate.setHours(
@@ -56,10 +67,10 @@ export const adjustScheduleToCurrentWeek=(lessons:{title:string;start:Date;end:D
       lesson.end.getSeconds()
     );
 
-    return{
-      title:lesson.title,
-      start:adjustedStartDate,
-      end:adjustedEndDate
-    }
-  })
-}
+    return {
+      title: lesson.title,
+      start: adjustedStartDate,
+      end: adjustedEndDate,
+    };
+  });
+};

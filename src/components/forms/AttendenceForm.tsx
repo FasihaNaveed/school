@@ -1,5 +1,6 @@
 "use client";
 
+// @ts-ignore
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -21,13 +22,13 @@ const schema = z.object({
   address: z.string().min(1, { message: "Address is required!" }),
   bloodType: z.string().min(1, { message: "Blood Type is required!" }),
   birthday: z.date({ message: "Birthday is required!" }),
-  sex: z.enum(["male", "female"], { message: "Sex is required!" }),
+  sex: z.enum(["male", "female"], { message: "Gender is required!" }),
   img: z.instanceof(File, { message: "Image is required" }),
 });
 
 type Inputs = z.infer<typeof schema>;
 
-const AttendanceForm = ({
+const AttendenceForm = ({
   type,
   data,
 }: {
@@ -48,7 +49,7 @@ const AttendanceForm = ({
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">Create a new attendance</h1>
+      <h1 className="text-xl font-semibold">Create a new attendence</h1>
       <span className="text-xs text-gray-400 font-medium">
         Authentication Information
       </span>
@@ -124,7 +125,7 @@ const AttendanceForm = ({
           type="date"
         />
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Sex</label>
+          <label className="text-xs text-gray-500">Gender</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sex")}
@@ -155,11 +156,11 @@ const AttendanceForm = ({
           )}
         </div>
       </div>
-      <button className="bg-blue-400 text-white p-2 rounded-md">
+      <button className="bg-purple-400 text-white p-2 rounded-md">
         {type === "create" ? "Create" : "Update"}
       </button>
     </form>
   );
 };
 
-export default AttendanceForm;
+export default AttendenceForm;

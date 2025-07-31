@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-// @ts-ignore
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -34,14 +33,14 @@ export default function ClassForm({ type, data, setOpen, relatedData }: Props) {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<ClassSchema>({
+  } = useForm({
     resolver: zodResolver(classSchema),
     defaultValues: {
       id: data?.id ? parseInt(data.id) : undefined,
-      name: data?.name || "",
-      capacity: data?.capacity || 0,
-      gradeId: data?.gradeId || 0,
-      supervisorId: data?.supervisorId || "",
+      name: data?.name ?? "",
+      capacity: data?.capacity ?? 0,
+      gradeId: data?.gradeId ?? 0,
+      supervisorId: data?.supervisorId ?? "",
     },
   });
 
@@ -52,10 +51,10 @@ export default function ClassForm({ type, data, setOpen, relatedData }: Props) {
     if (type === "update" && data) {
       reset({
         id: data?.id ? parseInt(data.id) : undefined,
-        name: data.name || "",
-        capacity: data.capacity || 0,
-        gradeId: data.gradeId || 0,
-        supervisorId: data.supervisorId || "",
+        name: data.name,
+        capacity: data.capacity,
+        gradeId: data.gradeId,
+        supervisorId: data.supervisorId,
       });
     }
   }, [type, data, reset]);
@@ -94,9 +93,7 @@ export default function ClassForm({ type, data, setOpen, relatedData }: Props) {
         {...register("name")}
         className="border border-gray-300 p-2 rounded-md"
       />
-      {errors.name && (
-        <p className="text-red-500 text-sm">{errors.name.message}</p>
-      )}
+      {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
 
       <label htmlFor="capacity" className="text-sm font-medium">
         Capacity
