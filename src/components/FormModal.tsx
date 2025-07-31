@@ -118,7 +118,7 @@ const Form = () => {
       setOpen(false);
       router.refresh();
     }
-  }, [state, type, setOpen, relatedData]);
+  }, [router, state, type, setOpen, relatedData]);
 
   if (type === "delete" && id) {
     return (
@@ -138,7 +138,7 @@ const Form = () => {
     return forms[table]({ setOpen, type, data, relatedData });
   }
 
-  return <p className="text-center text-red-600">Form not found for '{table}'</p>;
+  return <p className="text-center text-red-600">Form not found for {table}</p>;
 };
 
   return (

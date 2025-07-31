@@ -127,7 +127,7 @@ include:{
 
         {/* CALENDAR */}
         <div className="mt-2 bg-white rounded-md p-2 h-[750px]">
-          <h1 className="font-semibold text-xl mb-3">Teacher's Schedule</h1>
+          <h1 className="font-semibold text-xl mb-3">Teachers Schedule</h1>
          <BigCalendarContainer type="teacherId" id={teacher.id} />
         </div>
       </div>
