@@ -41,8 +41,13 @@ const TeacherForm = ({
 
   const router = useRouter();
 
-  const onSubmit = handleSubmit((formData) => {
-    formAction({ ...formData, img: img?.secure_url });
+  const onSubmit = handleSubmit(async (formData) => {
+    try {
+      formAction({ ...formData, img: img?.secure_url });
+    } catch (error) {
+      console.error("Form submit error:", error);
+      toast.error("Submission failed. Check console.");
+    }
   });
 
   useEffect(() => {
@@ -50,6 +55,9 @@ const TeacherForm = ({
       toast.success(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
       setOpen(false);
       router.refresh();
+    } else if (state.error) {
+      toast.error("Something went wrong!");
+      console.error("Server action error:", state); // Log backend error
     }
   }, [state, router, type, setOpen]);
 
@@ -75,27 +83,49 @@ const TeacherForm = ({
         <InputField label="Phone" name="phone" defaultValue={data?.phone} register={register} error={errors.phone} />
         <InputField label="Address" name="address" defaultValue={data?.address} register={register} error={errors.address} />
         <InputField label="Blood Type" name="bloodType" defaultValue={data?.bloodType} register={register} error={errors.bloodType} />
-        <InputField label="Birthday" name="birthday" type="date" defaultValue={data?.birthday?.toISOString().split("T")[0]} register={register} error={errors.birthday} />
-        {data?.id && <InputField label="Id" name="id" defaultValue={data?.id} register={register} error={errors?.id} hidden />}
+        <InputField
+          label="Birthday"
+          name="birthday"
+          type="date"
+          defaultValue={data?.birthday ? new Date(data?.birthday).toISOString().split("T")[0] : ""}
+          register={register}
+          error={errors.birthday}
+        />
+        {data?.id && (
+          <InputField label="Id" name="id" defaultValue={data?.id} register={register} error={errors?.id} hidden />
+        )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Gender</label>
-          <select className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full" {...register("sex")} defaultValue={data?.sex}>
+          <select
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            {...register("sex")}
+            defaultValue={data?.sex}
+          >
             <option value="MALE">Male</option>
             <option value="FEMALE">Female</option>
           </select>
           {errors.sex?.message && <p className="text-xs text-red-400">{errors.sex.message.toString()}</p>}
         </div>
+
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Subjects</label>
-          <select multiple className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full" {...register("subjects")} defaultValue={data?.subjects}>
+          <select
+            multiple
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            {...register("subjects")}
+            defaultValue={data?.subjects}
+          >
             {subjects.map((subject: { id: number; name: string }) => (
-              <option value={subject.id} key={subject.id}>
+              <option value={subject.id.toString()} key={subject.id}>
                 {subject.name}
               </option>
             ))}
           </select>
-          {errors.subjects?.message && <p className="text-xs text-red-400">{errors.subjects.message.toString()}</p>}
+          {errors.subjects?.message && (
+            <p className="text-xs text-red-400">{errors.subjects.message.toString()}</p>
+          )}
         </div>
+
         <CldUploadWidget
           uploadPreset="school"
           onSuccess={(result, { widget }) => {
@@ -111,8 +141,6 @@ const TeacherForm = ({
           )}
         </CldUploadWidget>
       </div>
-
-      {state.error && <span className="text-red-500">Something went wrong!</span>}
 
       <button type="submit" className="bg-purple-600 text-white p-2 rounded-md">
         {type === "create" ? "Create" : "Update"}
