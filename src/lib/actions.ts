@@ -144,6 +144,7 @@ export const createTeacher = async (
   currentState: CurrentState,
   data: TeacherSchema
 ) => {
+    console.log("CreateTeacher received:", data);
   try {
     const user = await clerkClient.users.createUser({
       username: data.username,
@@ -177,7 +178,7 @@ export const createTeacher = async (
    revalidatePath("/list/teachers");
     return { success: true, error: false };
   } catch (err) {
-    console.log(err);
+   console.error("CreateTeacher error:", err);
     return { success: false, error: true };
   }
 };
@@ -470,4 +471,21 @@ export const deleteExam = async (
     console.log(err);
     return { success: false, error: true };
   }
+};
+
+// For direct call from form with async/await
+export const createTeacherDirect = async (data: TeacherSchema) => {
+  return await createTeacher({ success: false, error: false }, data);
+};
+
+export const updateTeacherDirect = async (data: TeacherSchema) => {
+  return await updateTeacher({ success: false, error: false }, data);
+};
+
+export const createStudentDirect = async (data: StudentSchema) => {
+  return await createStudent({ success: false, error: false }, data);
+};
+
+export const updateStudentDirect = async (data: StudentSchema) => {
+  return await updateStudent({ success: false, error: false }, data);
 };

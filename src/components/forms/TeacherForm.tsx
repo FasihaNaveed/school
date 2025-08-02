@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import Image from "next/image";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction,  useState } from "react";
 import { teacherSchema, TeacherSchema } from "@/lib/formValidationSchemas";
-import { useFormState } from "react-dom";
-import { createTeacher, updateTeacher } from "@/lib/actions";
+import { createTeacherDirect, updateTeacherDirect } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { CldUploadWidget } from "next-cloudinary";
+
 
 const TeacherForm = ({
   type,
@@ -34,32 +34,21 @@ const TeacherForm = ({
 
   const [img, setImg] = useState<any>();
 
-  const [state, formAction] = useFormState(
-    type === "create" ? createTeacher : updateTeacher,
-    { success: false, error: false }
-  );
-
   const router = useRouter();
 
   const onSubmit = handleSubmit(async (formData) => {
-    try {
-      formAction({ ...formData, img: img?.secure_url });
-    } catch (error) {
-      console.error("Form submit error:", error);
-      toast.error("Submission failed. Check console.");
-    }
-  });
+  const result = await (type === "create"
+   ? createTeacherDirect({ ...formData, img: img?.secure_url })
+  : updateTeacherDirect({ ...formData, img: img?.secure_url }));
 
-  useEffect(() => {
-    if (state.success) {
-      toast.success(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
-      setOpen(false);
-      router.refresh();
-    } else if (state.error) {
-      toast.error("Something went wrong!");
-      console.error("Server action error:", state); // Log backend error
-    }
-  }, [state, router, type, setOpen]);
+  if (result?.success) {
+    toast.success(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
+    setOpen(false);
+    router.refresh();
+  } else {
+    toast.error("Something went wrong!");
+  }
+});
 
   const { subjects } = relatedData;
 
@@ -83,49 +72,27 @@ const TeacherForm = ({
         <InputField label="Phone" name="phone" defaultValue={data?.phone} register={register} error={errors.phone} />
         <InputField label="Address" name="address" defaultValue={data?.address} register={register} error={errors.address} />
         <InputField label="Blood Type" name="bloodType" defaultValue={data?.bloodType} register={register} error={errors.bloodType} />
-        <InputField
-          label="Birthday"
-          name="birthday"
-          type="date"
-          defaultValue={data?.birthday ? new Date(data?.birthday).toISOString().split("T")[0] : ""}
-          register={register}
-          error={errors.birthday}
-        />
-        {data?.id && (
-          <InputField label="Id" name="id" defaultValue={data?.id} register={register} error={errors?.id} hidden />
-        )}
+        <InputField label="Birthday" name="birthday" type="date" defaultValue={data?.birthday?.toISOString().split("T")[0]} register={register} error={errors.birthday} />
+        {data?.id && <InputField label="Id" name="id" defaultValue={data?.id} register={register} error={errors?.id} hidden />}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Gender</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("sex")}
-            defaultValue={data?.sex}
-          >
+          <select className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full" {...register("sex")} defaultValue={data?.sex}>
             <option value="MALE">Male</option>
             <option value="FEMALE">Female</option>
           </select>
           {errors.sex?.message && <p className="text-xs text-red-400">{errors.sex.message.toString()}</p>}
         </div>
-
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Subjects</label>
-          <select
-            multiple
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("subjects")}
-            defaultValue={data?.subjects}
-          >
+          <select multiple className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full" {...register("subjects")} defaultValue={data?.subjects}>
             {subjects.map((subject: { id: number; name: string }) => (
-              <option value={subject.id.toString()} key={subject.id}>
+              <option value={subject.id} key={subject.id}>
                 {subject.name}
               </option>
             ))}
           </select>
-          {errors.subjects?.message && (
-            <p className="text-xs text-red-400">{errors.subjects.message.toString()}</p>
-          )}
+          {errors.subjects?.message && <p className="text-xs text-red-400">{errors.subjects.message.toString()}</p>}
         </div>
-
         <CldUploadWidget
           uploadPreset="school"
           onSuccess={(result, { widget }) => {
@@ -141,7 +108,6 @@ const TeacherForm = ({
           )}
         </CldUploadWidget>
       </div>
-
       <button type="submit" className="bg-purple-600 text-white p-2 rounded-md">
         {type === "create" ? "Create" : "Update"}
       </button>
